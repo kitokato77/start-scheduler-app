@@ -24,9 +24,13 @@ class AutoStartApp:
         self.detect_language()
         self.load_translations()
         self.load_config()
-        self.create_gui()
+        
+        # Jika startup mode, langsung jalankan tanpa GUI
         if self.startup_mode:
-            self.root.after(1000, self.start_autostart)
+            self.root.withdraw()  # Hide window
+            self.root.after(500, self.run_startup_mode)
+        else:
+            self.create_gui()
     
     def detect_language(self):
         try:
@@ -51,6 +55,44 @@ class AutoStartApp:
                         self.language = saved_lang
             except:
                 pass
+    
+    def run_startup_mode(self):
+        """Jalankan aplikasi di startup mode (background, no GUI)"""
+        if not self.apps:
+            # Tidak ada aplikasi, tutup
+            self.root.quit()
+            return
+        
+        # Jalankan aplikasi secara berurutan
+        for i, app in enumerate(self.apps):
+            app_name = app['name']
+            app_path = app['path']
+            exe_name = os.path.basename(app_path)
+            
+            try:
+                # Jalankan aplikasi
+                subprocess.Popen([app_path])
+                
+                # Tunggu hingga aplikasi benar-benar berjalan
+                max_wait = 30
+                wait_count = 0
+                
+                while wait_count < max_wait:
+                    if self.is_process_running(exe_name):
+                        break
+                    time.sleep(self.check_interval)
+                    wait_count += self.check_interval
+                
+                # Delay sebelum menjalankan aplikasi berikutnya
+                if i < len(self.apps) - 1:
+                    time.sleep(self.delay_between_apps)
+                    
+            except Exception as e:
+                # Lanjutkan ke aplikasi berikutnya meskipun ada error
+                pass
+        
+        # Selesai, tutup aplikasi
+        self.root.quit()
     
     def load_translations(self):
         self.translations = {
@@ -183,26 +225,40 @@ class AutoStartApp:
         self.create_gui()
     
     def load_config(self):
+        """Load konfigurasi dari file JSON"""
         if os.path.exists(self.config_file):
-            with open(self.config_file, 'r') as f:
-                config = json.load(f)
-                self.apps = config.get('apps', [])
-                self.delay_between_apps = config.get('delay_between_apps', 3)
-                self.check_interval = config.get('check_interval', 2)
+            try:
+                with open(self.config_file, 'r', encoding='utf-8') as f:
+                    config = json.load(f)
+                    self.apps = config.get('apps', [])
+                    self.delay_between_apps = config.get('delay_between_apps', 3)
+                    self.check_interval = config.get('check_interval', 2)
+            except Exception as e:
+                # Jika error membaca config, gunakan default
+                self.apps = []
+                self.delay_between_apps = 3
+                self.check_interval = 2
         else:
             self.apps = []
             self.delay_between_apps = 3
             self.check_interval = 2
+            # Buat config file default
+            self.save_config()
     
     def save_config(self):
+        """Simpan konfigurasi ke file JSON"""
         config = {
             'apps': self.apps,
             'delay_between_apps': self.delay_between_apps,
             'check_interval': self.check_interval,
             'language': self.language
         }
-        with open(self.config_file, 'w') as f:
-            json.dump(config, f, indent=2)
+        try:
+            with open(self.config_file, 'w', encoding='utf-8') as f:
+                json.dump(config, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            if hasattr(self, 'status_label'):
+                self.update_status(f"Error saving config: {str(e)}")
     
     def create_gui(self):
         top_frame = ttk.Frame(self.root, padding="10")
@@ -298,7 +354,7 @@ class AutoStartApp:
             self.apps.append({
                 'name': app_name,
                 'path': file_path,
-                'status': self.t('status_waiting')
+                'status': 'Waiting'
             })
             self.save_config()
             self.refresh_list()
