@@ -2,6 +2,8 @@
 
 [English](README.md) | **Bahasa Indonesia**
 
+> 📥 **Download Aplikasi Siap Pakai**: Dapatkan file `.exe` terbaru dari [Releases](https://github.com/kitokato77/start-scheduler-app/releases/latest)
+
 Aplikasi Python untuk mengelola dan menjalankan aplikasi secara otomatis saat Windows startup dengan sistem queue/antrian.
 
 ## Fitur

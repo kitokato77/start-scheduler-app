@@ -2,6 +2,8 @@
 
 **English** | [Bahasa Indonesia](README-ID.md)
 
+> 📥 **Download Ready-to-Use Application**: Get the latest `.exe` file from [Releases](https://github.com/kitokato77/start-scheduler-app/releases/latest)
+
 A Python application to manage and automatically run applications at Windows startup with a queue system.
 
 ## Features
