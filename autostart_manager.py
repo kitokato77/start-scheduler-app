@@ -17,8 +17,6 @@ class AutoStartApp:
         self.root.geometry("900x650")
         self.root.minsize(900, 650)
         self.root.resizable(True, True)
-        
-        # Simpan config di AppData (hidden dari user)
         appdata_path = os.path.join(os.getenv('APPDATA'), 'StartScheduler')
         if not os.path.exists(appdata_path):
             os.makedirs(appdata_path)
@@ -30,10 +28,9 @@ class AutoStartApp:
         self.detect_language()
         self.load_translations()
         self.load_config()
-        
-        # Jika startup mode, langsung jalankan tanpa GUI
+
         if self.startup_mode:
-            self.root.withdraw()  # Hide window
+            self.root.withdraw()
             self.root.after(500, self.run_startup_mode)
         else:
             self.create_gui()
@@ -63,23 +60,17 @@ class AutoStartApp:
                 pass
     
     def run_startup_mode(self):
-        """Jalankan aplikasi di startup mode (background, no GUI)"""
         if not self.apps:
-            # Tidak ada aplikasi, tutup
             self.root.quit()
             return
-        
-        # Jalankan aplikasi secara berurutan
+
         for i, app in enumerate(self.apps):
             app_name = app['name']
             app_path = app['path']
             exe_name = os.path.basename(app_path)
             
             try:
-                # Jalankan aplikasi
                 subprocess.Popen([app_path])
-                
-                # Tunggu hingga aplikasi benar-benar berjalan
                 max_wait = 30
                 wait_count = 0
                 
@@ -88,16 +79,13 @@ class AutoStartApp:
                         break
                     time.sleep(self.check_interval)
                     wait_count += self.check_interval
-                
-                # Delay sebelum menjalankan aplikasi berikutnya
+
                 if i < len(self.apps) - 1:
                     time.sleep(self.delay_between_apps)
                     
             except Exception as e:
-                # Lanjutkan ke aplikasi berikutnya meskipun ada error
                 pass
         
-        # Selesai, tutup aplikasi
         self.root.quit()
     
     def load_translations(self):
@@ -231,7 +219,6 @@ class AutoStartApp:
         self.create_gui()
     
     def load_config(self):
-        """Load konfigurasi dari file JSON"""
         if os.path.exists(self.config_file):
             try:
                 with open(self.config_file, 'r', encoding='utf-8') as f:
@@ -240,7 +227,6 @@ class AutoStartApp:
                     self.delay_between_apps = config.get('delay_between_apps', 3)
                     self.check_interval = config.get('check_interval', 2)
             except Exception as e:
-                # Jika error membaca config, gunakan default
                 self.apps = []
                 self.delay_between_apps = 3
                 self.check_interval = 2
@@ -248,11 +234,9 @@ class AutoStartApp:
             self.apps = []
             self.delay_between_apps = 3
             self.check_interval = 2
-            # Buat config file default
             self.save_config()
     
     def save_config(self):
-        """Simpan konfigurasi ke file JSON"""
         config = {
             'apps': self.apps,
             'delay_between_apps': self.delay_between_apps,
@@ -418,7 +402,6 @@ class AutoStartApp:
             self.tree.see(new_item)
     
     def auto_save_settings(self):
-        """Auto-simpan pengaturan ketika ada perubahan"""
         self.delay_between_apps = self.delay_var.get()
         self.check_interval = self.check_var.get()
         self.save_config()
