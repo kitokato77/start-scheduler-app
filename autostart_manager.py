@@ -17,7 +17,13 @@ class AutoStartApp:
         self.root.geometry("900x650")
         self.root.minsize(900, 650)
         self.root.resizable(True, True)
-        self.config_file = "config.json"
+        
+        # Simpan config di AppData (hidden dari user)
+        appdata_path = os.path.join(os.getenv('APPDATA'), 'StartScheduler')
+        if not os.path.exists(appdata_path):
+            os.makedirs(appdata_path)
+        self.config_file = os.path.join(appdata_path, 'config.json')
+        
         self.apps = []
         self.is_running = False
         self.startup_mode = "--startup" in sys.argv
@@ -279,11 +285,15 @@ class AutoStartApp:
         
         ttk.Label(settings_frame, text=self.t('delay_label')).grid(row=0, column=0, sticky=tk.W)
         self.delay_var = tk.IntVar(value=self.delay_between_apps)
-        ttk.Spinbox(settings_frame, from_=0, to=60, textvariable=self.delay_var, width=10).grid(row=0, column=1, padx=5)
+        delay_spinbox = ttk.Spinbox(settings_frame, from_=0, to=60, textvariable=self.delay_var, width=10, command=self.auto_save_settings)
+        delay_spinbox.grid(row=0, column=1, padx=5)
+        delay_spinbox.bind('<FocusOut>', lambda e: self.auto_save_settings())
         
         ttk.Label(settings_frame, text=self.t('check_label')).grid(row=0, column=2, sticky=tk.W, padx=(20,0))
         self.check_var = tk.IntVar(value=self.check_interval)
-        ttk.Spinbox(settings_frame, from_=1, to=30, textvariable=self.check_var, width=10).grid(row=0, column=3, padx=5)
+        check_spinbox = ttk.Spinbox(settings_frame, from_=1, to=30, textvariable=self.check_var, width=10, command=self.auto_save_settings)
+        check_spinbox.grid(row=0, column=3, padx=5)
+        check_spinbox.bind('<FocusOut>', lambda e: self.auto_save_settings())
 
         ttk.Label(settings_frame, text=self.t('language')).grid(row=0, column=4, sticky=tk.W, padx=(20,0))
         self.lang_var = tk.StringVar(value=self.language)
@@ -292,8 +302,6 @@ class AutoStartApp:
         lang_combo.current(0 if self.language == 'en' else 1)
         lang_combo.bind('<<ComboboxSelected>>', lambda e: self.change_language('en' if self.lang_var.get() == self.t('english') else 'id'))
         lang_combo.grid(row=0, column=5, padx=5)
-        
-        ttk.Button(settings_frame, text=self.t('save_settings'), command=self.save_settings).grid(row=0, column=6, padx=20)
 
         list_frame = ttk.LabelFrame(self.root, text=self.t('app_list'), padding="10")
         list_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
@@ -409,12 +417,12 @@ class AutoStartApp:
             self.tree.selection_set(new_item)
             self.tree.see(new_item)
     
-    def save_settings(self):
+    def auto_save_settings(self):
+        """Auto-simpan pengaturan ketika ada perubahan"""
         self.delay_between_apps = self.delay_var.get()
         self.check_interval = self.check_var.get()
         self.save_config()
         self.update_status(self.t('settings_saved_status'))
-        messagebox.showinfo(self.t('info'), self.t('settings_saved'))
     
     def update_status(self, message):
         self.status_label.config(text=message)
